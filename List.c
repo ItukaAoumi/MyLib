@@ -1,11 +1,16 @@
-#include <stdlib.h>
-#include <D:\MyLib\List.h>
+/*
+This is made by Ituka Aoumi,from Code A Live
+Have fun!hhh2333666
+*/
+#include <stdlib.h>//Necessary.Please do not change.
+#include "List.h"//List.h must be included,but please change the path if it is not the same as mine.
 
 //Functions of List_1D
 
 //Initializing a list(double type).Use once at first.
 void List_1D_Init(struct List_1D * list)
 {
+	if (list==0) return;
 	list->FirstItem=0;
 	list->Length=0;
 	return;
@@ -22,7 +27,7 @@ unsigned char List_1D_IExt(struct List_1D * list,unsigned int index)
 	return 0;
 }
 
-//Add data to the head.Return 1 if succeed,or return 0 if failed.Change the data type if it is not double type.
+//Add an item to the head.Return 1 if succeed,or return 0 if failed.Change the data type if it is not double type.
 unsigned char List_1D_Add(struct List_1D * list,unsigned int index,double dat)
 {
 	if (list==0) return 0;
@@ -39,6 +44,7 @@ unsigned char List_1D_Add(struct List_1D * list,unsigned int index,double dat)
 	}
 	else//index not exist
 	{
+		if (dat==0) return 1;//dat==0,do not add
 		struct ListItem_1D * nitem=(struct List_1D*)malloc(LI1Dsize);
 		if (nitem==0) return 0;
 		nitem->dat=dat;
@@ -50,7 +56,7 @@ unsigned char List_1D_Add(struct List_1D * list,unsigned int index,double dat)
 	}
 }
 
-//Edit data of a item.Return 1 if succeed.
+//Edit data of an item.Return 1 if succeed.
 unsigned char List_1D_Edit(struct List_1D * list,unsigned int index,double dat)
 {
 	if (list==0) return 0;
@@ -64,7 +70,7 @@ unsigned char List_1D_Edit(struct List_1D * list,unsigned int index,double dat)
 	return 0;
 }
 
-//Delete a selected data.
+//Delete an item by its index.
 void List_1D_Del(struct List_1D * list,unsigned int index)
 {
 	if (list==0) return;
@@ -93,7 +99,7 @@ void List_1D_Del(struct List_1D * list,unsigned int index)
 	return;
 }
 
-//Clear all data.
+//Clear the list.Use once at last.
 void List_1D_Clr(struct List_1D * list)
 {
 	if (list==0) return;
@@ -107,7 +113,7 @@ void List_1D_Clr(struct List_1D * list)
 	return;
 }
 
-//Seek the address.
+//Seeking the address of an item by its index.
 LI1D * List_1D_Seek(struct List_1D * list,unsigned int index)
 {
 	if (list==0) return 0;
@@ -119,7 +125,7 @@ LI1D * List_1D_Seek(struct List_1D * list,unsigned int index)
 }
 
 //Get data by index.
-double List_1D_Get(struct List_1D * list,unsigned int index)
+double List_1D_GetDat(struct List_1D * list,unsigned int index)
 {
 	if (list==0) return 0;
 	LI1D * pos;
@@ -129,128 +135,110 @@ double List_1D_Get(struct List_1D * list,unsigned int index)
 	return 0;
 }
 
-//Functions about Stack
-//Initializing a stack.
-void InitStk(pStack * stk)
+
+
+
+//Functions of Stack
+
+//Initializing a stack(double type).Use once at first.
+void Stk_Init(struct Stack * stk)
 {
-	stk->top.ptr=0;
-	stk->top.psize=0;
-	stk->top.next=0;
+	if (stk==0) return;
+	stk->Top=0;
+	stk->Length=0;
 	return;
 }
 
-void PushStk(pStack * stk,void * ptr,unsigned char psize)
+//Add an item to the stack.Return 1 if succeed.
+unsigned char Stk_Push(struct Stack * stk,double dat)
 {
-	StkItem * tmp=malloc(SIsize);
-	tmp->ptr=ptr;
-	tmp->psize=psize;
-	tmp->next=stk->top.next;
-	stk->top.next=tmp;
+	if (stk==0) return 0;
+	SItem * nitem=malloc(SIsize);
+	if (nitem==0) return 0;
+	nitem->dat=dat;
+	nitem->next=stk->Top;
+	stk->Top=nitem;
+	stk->Length++;
+	return 1;
+}
+
+//Peek the top of the stack,but do not remove.
+double Stk_Peek(struct Stack * stk)
+{
+	if (stk==0||stk->Top==0) return 0;
+	return stk->Top->dat;
+}
+
+//Remove an item from the stack and return.
+double Stk_Pop(struct Stack * stk)
+{
+	if (stk==0||stk->Top==0) return 0;
+	SItem * ptr=stk->Top;//record the item on the top
+	double dat=stk->Top->dat;
+	stk->Top=stk->Top->next;//move to the next item
+	free(ptr);
+	stk->Length--;
+	return dat;
+}
+
+
+
+//Functions of Queue
+
+//Initializing a queue(double type).Use once at first.
+void Que_Init(struct Queue * que)
+{
+	if (que==0) return;
+	que->Head=que->Tail=0;
+	que->Length=0;
 	return;
 }
 
-void * PopStk(pStack * stk,unsigned char * psize)
+//Add an item to the queue.Return 1 if succeed.
+unsigned char Que_Push(struct Queue * que,double dat)
 {
-	StkItem * tmp=stk->top.next;void * r=0;
-	if (tmp!=0)
+	if (que==0) return 0;
+	QItem * nitem=malloc(QIsize);
+	if (nitem==0) return 0;
+	nitem->dat=dat;
+	nitem->next=0;
+	if (que->Tail!=0)//not empty
 	{
-		r=tmp->ptr;
-		*psize=tmp->psize;
-		stk->top.next=tmp->next;
-		free(tmp);
+		que->Tail->next=nitem;
+		que->Tail=nitem;
 	}
-	return r;
+	else//empty queue
+		que->Head=que->Tail=nitem;
+	que->Length++;
+	return 1;
 }
 
-void * PeekStk(pStack * stk,unsigned char * psize)
+//Peek the head of the queue,but do not remove.
+double Que_PeekHead(struct Queue * que)
 {
-	if (stk->top.next!=0)
-	{
-		*psize=stk->top.next->psize;
-		return stk->top.next->ptr;
-	}
-	else
-	{
-		*psize=0;
-		return 0;
-	}
+	if (que==0||que->Head==0) return 0;
+	return que->Head->dat;
 }
 
-unsigned int StkLen(pStack * stk)
+//Peek the tail of the queue,but do not remove.
+double Que_PeekTail(struct Queue * que)
 {
-	unsigned int i=0;
-	StkItem * tmp=stk->top.next;
-	while (tmp!=0)
-	{
-		i++;
-		tmp=tmp->next;
-	}
-	return i;
+	if (que==0||que->Tail==0) return 0;
+	return que->Tail->dat;
 }
 
-//queue
-void InitQue(pQueue * que)
+//Remove an item from the queue and return.
+double Que_Pop(struct Queue * que)
 {
-	que->head.ptr=que->tail.ptr=0;
-	que->head.psize=que->tail.psize=0;
-	que->head.next=&(que->tail);
-	que->head.last=que->tail.next=0;
-	que->tail.last=&(que->head);
-	return;
+	if (que==0||que->Head==0) return 0;
+	QItem * ptr=que->Head;//record the head item
+	double dat=que->Head->dat;
+	que->Head=que->Head->next;//move to next item
+	free(ptr);
+	que->Length--;
+	return dat;
 }
 
-void PushQue(pQueue * que,void * ptr,unsigned char psize)
-{
-	QItem * tmp=malloc(QIsize);
-	if (tmp!=0)
-	{
-		tmp->ptr=ptr;
-		tmp->psize=psize;
-		tmp->next=que->head.next;
-		tmp->last=&(que->head);
-		que->head.next->last=tmp;
-		que->head.next=tmp;
-	}
-	return;
-}
 
-void * PopQue(pQueue * que,unsigned char * psize)
-{
-	QItem * tmp=que->tail.last;void * r=0;
-	if (tmp!=&(que->head))
-	{
-		r=tmp->ptr;
-		*psize=tmp->psize;
-		tmp->last->next=&(que->tail);
-		que->tail.last=tmp->last;
-		free(tmp);
-	}
-	return r;
-}
 
-void * PeekQue(pQueue * que,unsigned char * psize)
-{
-	if (que->head.next!=&(que->tail))
-	{
-		*psize=que->tail.last->psize;
-		return que->tail.last->ptr;
-	}
-	else
-	{
-		*psize=0;
-		return 0;
-	}
-}
-
-unsigned int QueLen(pQueue * que)
-{
-	unsigned int i=0;
-	QItem * tmp=que->head.next;
-	while (tmp!=&(que->tail))
-	{
-		i++;
-		tmp=tmp->next;
-	}
-	return i;
-
-}
+//Thanks for reading.Love you.[bi xin]
