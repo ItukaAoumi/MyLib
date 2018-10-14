@@ -1,96 +1,210 @@
+/*
+This is a library of list type data structures,including single-dimension list,double-dimension list,stack and queue.
+Have Fun _( :<L )_ !
+CN:Ituka Aoumi,Qiyi Ji,Dragon_t;
+Group:Code A Live;
+Git:
+12,Oct,2018.Build:0.1.1;
+*/
+
+//Do not include me twice!
 #ifndef LIST_H_INCLUDED
 #define LIST_H_INCLUDED
-#pragma once
 
-/*Single Dimension List
+//Can be used in cpp
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+
+/*
+Single-Dimension List
 Can be used to store a sequence of data.
-This is an example that uses double(64bit floating-point number) type,and you can change it in other situations.
-Value 0 will not be stored to reduce the space occupation.*/
+*/
 
-//data structures
-typedef struct ListItem_1D
+//data structures:
+
+typedef struct List_1D_Item
 {
-	double dat;//This is the data area.Change it in different situations.
-	unsigned int index;
-	struct ListItem_1D * next;
-}LI1D;
-
-static const unsigned int LI1Dsize=sizeof(struct ListItem_1D);
+	unsigned int Index;//A unique number for every data item.
+	void * Data;//data ptr
+	unsigned char DataSize;//the size of data
+	char * TypeName;//the name of data type
+	struct List_1D_Item * next;
+}L1DI_t, * L1DI_p;
 
 typedef struct List_1D
 {
-	struct ListItem_1D * FirstItem;
+	struct List_1D_Item * First;//the first item of the list
 	unsigned int Length;
-}List1D;
+}List1D_t, * List1D_p;
 
-//functions
-void List_1D_Init(struct List_1D * list);//Initializing a list(double type).Use once at first.
-unsigned char List_1D_IExt(struct List_1D * list,unsigned int index);//Check the item is exist or not.
-unsigned char List_1D_Add(struct List_1D * list,unsigned int index,double dat);//Add an item to the head.Return 1 if succeed,or return 0 if failed.Change the data type if it is not double type.
-unsigned char List_1D_Edit(struct List_1D * list,unsigned int index,double dat);//Edit data of an item.Return 1 if succeed.
-void List_1D_Del(struct List_1D * list,unsigned int index);//Delete an item by its index.
-void List_1D_Clr(struct List_1D * list);//Clear the list.Use once at last.
-LI1D * List_1D_Seek(struct List_1D * list,unsigned int index);//Seeking the address of an item by its index.
-double List_1D_GetDat(struct List_1D * list,unsigned int index);//Get data by index.
+static const unsigned char L1DIsize=sizeof(struct List_1D_Item);
+static const unsigned char List1Dsize=sizeof(struct List_1D);
+
+//functions:
+
+/*
+Create a new single-dimension list like this : List1D_t <name> = { 0 , 0 }
+or List1D_p <name> = ( List1D_p ) malloc( List1Dsize ) ; List1D_Init( name )
+You can use the macro definition List1D_New or List1D_New_p(name) .
+*/
+#define List1D_New { 0 , 0 }
+#define List1D_New_p(name) ( List1D_p ) malloc( List1Dsize ) ; List1D_Init( name )
+
+//Initializing a list.Use once at first.Return 1 if succeed.
+char List1D_Init(List1D_p list);
+
+//Add an item to the head.Return 1 if succeed.
+char List1D_Add(List1D_p list,unsigned int index,void * data,unsigned char datasize,char * type_name);
+
+//Edit data of an item.Return 1 if succeed.
+char List1D_Edit(L1DI_p item,void * data,unsigned char datasize,char * type_name);
+
+//Delete an item.
+char List1D_Del(List1D_p list,L1DI_p item);
+
+//Clear the list.Use once at last.
+char List1D_Clr(List1D_p list);
+
+//Seeking the address of an item by its index.
+L1DI_p List1D_Seek(List1D_p list,unsigned int index);
+
+//Get data by ptr
+void * List1D_GetData_p(L1DI_p item,unsigned char * datasize,char * type_name);
+
+//Get data by index.
+void * List1D_GetData_i(List1D_p list,unsigned int index,unsigned char * datasize,char * type_name);
 
 
+//to be continued
 
-/*Stack
-First in and last out.
-This is an example that uses double(64bit floating-point number) type,and you can change it in other situations.*/
 
-//data structures
+/*
+Stack
+A kind of First-In-Last-Out data structure.
+*/
+
+//data structures:
+
 typedef struct StackItem
 {
-	double dat;//This is the data area.Change it in different situations.
+	void * Data;//data ptr
+	unsigned char DataSize;//the size of data
+	char * TypeName;//the name of data type
 	struct StackItem * next;
-}SItem;
-
-static const unsigned int SIsize=sizeof(struct StackItem);
+}SI_t, * SI_p;
 
 typedef struct Stack
 {
 	struct StackItem * Top;
 	unsigned int Length;
-}Stack;
+}Stack_t, * Stack_p;
 
-//functions
-void Stk_Init(struct Stack * stk);//Initializing a stack(double type).Use once at first.
-unsigned char Stk_Push(struct Stack * stk,double dat);//Add an item to the stack.Return 1 if succeed.
-double Stk_Peek(struct Stack * stk);//Peek the top of the stack,but do not remove.
-double Stk_Pop(struct Stack * stk);//Remove an item from the stack and return.
+static const unsigned char SIsize=sizeof(struct StackItem);//the size of a stack item
+static const unsigned char Stksize=sizeof(struct Stack);//the size of a stack
+
+//functions:
+
+/*
+Create a new stack like this : Stack_t <name> = { 0 , 0 }
+or Stack_p <name> = ( Stack_p ) malloc( Stksize ) ; Stk_Init( name )
+You can use the macro definition Stk_New or Stk_New_p(name) .
+*/
+#define Stk_New { 0 , 0 }
+#define Stk_New_p(name) ( Stack_p ) malloc( Stksize ) ; Stk_Init( name )
+
+//Initializing a stack(double type).Use once at first.
+char Stk_Init(Stack_p stk);
+
+//Add an item to the stack.Return 1 if succeed.
+char Stk_Push(Stack_p stk,void * data,unsigned char datasize,char * type_name);
+
+//Peek the top of the stack,but do not remove.
+void * Stk_PeekData(Stack_p stk);
+
+unsigned char Stk_PeekSize(Stack_p stk);
+
+char * Stk_PeekTypeName(Stack_p stk);
+
+//Remove an item from the stack and return.
+void * Stk_Pop(Stack_p stk,unsigned char * datasize,char * type_name);
+
+//Clear the stack.
+char Stk_Clr(Stack_p stk);
 
 
+//to be continued
 
 
+/*
+Queue
+A kind of First-In-First-Out data structure.
+*/
 
+//data structures:
 
-/*Queue
-First in and first out.
-This is an example that uses double(64bit floating-point number) type,and you can change it in other situations.*/
-
-//data structures
 typedef struct QueueItem
 {
-	double dat;//This is the data area.Change it in different situations.
+	void * Data;//data ptr
+	unsigned char DataSize;//the size of data
+	char * TypeName;//the name of data type
 	struct QueueItem * next;
-}QItem;
-
-static const unsigned int QIsize=sizeof(struct QueueItem);
+}QI_t, * QI_p;
 
 typedef struct Queue
 {
 	struct QueueItem * Head;
 	struct QueueItem * Tail;
 	unsigned int Length;
-}Queue;
+}Queue_t, * Queue_p;
 
-//functions
-void Que_Init(struct Queue * que);//Initializing a queue(double type).Use once at first.
-unsigned char Que_Push(struct Queue * que,double dat);//Add an item to the queue.Return 1 if succeed.
-double Que_PeekHead(struct Queue * que);//Peek the head of the queue,but do not remove.
-double Que_PeekTail(struct Queue * que);//Peek the tail of the queue,but do not remove.
-double Que_Pop(struct Queue * que);//Remove an item from the queue and return.
+static const unsigned int QIsize=sizeof(struct QueueItem);//the size of a queue item
+static const unsigned char Quesize=sizeof(struct Queue);//the size of a queue
 
+//functions:
+
+/*
+Create a new queue like this : Queue_t <name> = { 0 , 0 , 0 }
+or Queue_p <name> = ( Queue_p ) malloc( Quesize ) ; Que_Init( name )
+You can use the macro definition Que_New or Que_New_p(name) .
+*/
+#define Que_New { 0 , 0 , 0 }
+#define Que_New_p(name) ( Queue_p ) malloc( Quesize ) ; Que_Init( name )
+
+//Initializing a queue.Use once at first.Return 1 if succeed.
+char Que_Init(struct Queue * que);
+
+//Add an item to the queue.Return 1 if succeed.
+char Que_Push(Queue_p que,void * data,unsigned char datasize,char * type_name);
+
+//Peek the head of the queue,but do not remove.
+void * Que_PeekHeadData(Queue_p que);
+
+unsigned char Que_PeekHeadSize(Queue_p que);
+
+char * Que_PeekHeadTypeName(Queue_p que);
+
+//Peek the tail of the queue,but do not remove.
+void * Que_PeekTailData(Queue_p que);
+
+unsigned char Que_PeekTailSize(Queue_p que);
+
+char * Que_PeekTailTypeName(Queue_p que);
+
+//Remove an item from the queue and return.
+void * Que_Pop(Queue_p que,unsigned char * datasize,char * type_name);
+
+//Clear the queue.
+char Que_Clr(Queue_p que);
+
+
+//to be continued
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 #endif // LIST_H_INCLUDED
+
+//Thanks for reading.Love you.

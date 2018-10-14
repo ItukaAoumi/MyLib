@@ -1,161 +1,189 @@
 /*
-This is made by Ituka Aoumi,from Code A Live
-Have fun!hhh2333666
+This is a library of list type data structures,including single-dimension list,double-dimension list,stack and queue.
+Have Fun _( :<L )_ !
+CN:Ituka Aoumi,Qiyi Ji,Dragon_t;
+Group:Code A Live;
+Git:
+12,Oct,2018.Build:0.1.1;
 */
+
 #include <stdlib.h>//Necessary.Please do not change.
+#include <string.h>
 #include "List.h"//List.h must be included,but please change the path if it is not the same as mine.
 
-//Functions of List_1D
+//Can be used in cpp
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
-//Initializing a list(double type).Use once at first.
-void List_1D_Init(struct List_1D * list)
+
+/*
+Single-Dimension List
+Can be used to store a sequence of data.
+*/
+
+//Functions of List1D
+
+/*
+Create a new single-dimension list like this : List1D_t <name> = { 0 , 0 }
+or List1D_p <name> = ( List1D_p ) malloc( List1Dsize ) ; List1D_Init( name )
+You can use the macro definition List1D_New or List1D_New_p(name) .
+*/
+
+//Initializing a list.Use once at first.Return 1 if succeed.
+char List1D_Init(List1D_p list)
 {
-	if (list==0) return;
-	list->FirstItem=0;
+	if (!list) return 0;
+	list->First=0;
 	list->Length=0;
-	return;
+	return 1;
 }
 
-//Check the item is exist or not.
-unsigned char List_1D_IExt(struct List_1D * list,unsigned int index)
+//Add an item to the head.Return 1 if succeed.
+char List1D_Add(List1D_p list,unsigned int index,void * data,unsigned char datasize,char * type_name)
 {
-	if (list==0) return 1;
-	LI1D * ptr;
-	for (ptr=list->FirstItem;ptr!=0;ptr=ptr->next)
-		if (ptr->index==index)
+	if (!(list&&data&&datasize)) return 0;
+	L1DI_p item=List1D_Seek(list,index);
+	if (item)//item exist
+		if (List1D_Edit(item,data,datasize,type_name))
 			return 1;
-	return 0;
-}
-
-//Add an item to the head.Return 1 if succeed,or return 0 if failed.Change the data type if it is not double type.
-unsigned char List_1D_Add(struct List_1D * list,unsigned int index,double dat)
-{
-	if (list==0) return 0;
-	if (List_1D_IExt(list,index))//item exist
-	{
-		if (dat!=0)//not 0,edit the data
-			if (List_1D_Edit(list,index,dat))
-				return 1;
-			else
-				return 0;
-		else//dat==0,delete the item
-			List_1D_Del(list,index);
-		return 1;
-	}
+		else
+			return 0;
 	else//index not exist
 	{
-		if (dat==0) return 1;//dat==0,do not add
-		struct ListItem_1D * nitem=(struct List_1D*)malloc(LI1Dsize);
-		if (nitem==0) return 0;
-		nitem->dat=dat;
-		nitem->index=index;
-		nitem->next=list->FirstItem;
-		list->FirstItem=nitem;
+		item=(L1DI_p)malloc(L1DIsize);
+		if (!item) return 0;
+		item->Index=index;
+		item->Data=data;
+		item->DataSize=datasize;
+		item->TypeName=(char *)malloc(strlen(type_name)+1);
+		if (item->TypeName) strcpy(item->TypeName,type_name);
+		item->next=list->First;
+		list->First=item;
 		list->Length++;
 		return 1;
 	}
 }
 
 //Edit data of an item.Return 1 if succeed.
-unsigned char List_1D_Edit(struct List_1D * list,unsigned int index,double dat)
+char List1D_Edit(L1DI_p item,void * data,unsigned char datasize,char * type_name)
 {
-	if (list==0) return 0;
-	LI1D * ptr;
-	for (ptr=list->FirstItem;ptr!=0;ptr=ptr->next)
-		if (ptr->index==index)
-		{
-			ptr->dat=dat;
-			return 1;
-		}
-	return 0;
+	if (!(item&&data&&datasize)) return 0;
+	item->Data=data;
+	item->DataSize=datasize;
+	if (* type_name) strcpy(item->TypeName,type_name);
+	return 1;
 }
 
-//Delete an item by its index.
-void List_1D_Del(struct List_1D * list,unsigned int index)
+//Delete an item.
+char List1D_Del(List1D_p list,L1DI_p item)
 {
-	if (list==0) return;
-	LI1D * ptr=list->FirstItem;
-	if (ptr==0) return;
-	if (ptr->index!=index)//is not the first
+	if (!(list&&item)) return 0;
+	if (!list->First) return 0;
+	if (list->First!=item)//is not the first
 	{
-		LI1D * last;//the item behind ptr
-		for (last=ptr,ptr=ptr->next;ptr!=0;last=ptr,ptr=ptr->next)//go through
+		L1DI_p last;//behind item
+		for (last=list->First;last;last=last->next)//scan the list
 		{
-			if (ptr->index==index)//find the item
+			if (last->next==item)//find the item
 			{
-				last->next=ptr->next;
-				free(ptr);
+				last->next=item->next;
+				free(item->TypeName);
+				free(item);
 				list->Length--;
-				return;
+				return 1;
 			}
 		}
+		return 0;
 	}
 	else//delete the first item
 	{
-		list->FirstItem=ptr->next;
-		free(ptr);
+		list->First=item->next;
+		free(item->TypeName);
+		free(item);
 		list->Length--;
+		return 1;
 	}
-	return;
 }
 
 //Clear the list.Use once at last.
-void List_1D_Clr(struct List_1D * list)
+char List1D_Clr(List1D_p list)
 {
-	if (list==0) return;
-	LI1D * ptr;
-	for (ptr=list->FirstItem;ptr!=0;ptr=list->FirstItem)
+	if (!list) return 0;
+	L1DI_p ptr;
+	while (list->First)
 	{
-		list->FirstItem=ptr->next;
+		ptr=list->First;
+		list->First=list->First->next;
+		free(ptr->TypeName);
 		free(ptr);
 	}
 	list->Length=0;
-	return;
+	return 1;
 }
 
 //Seeking the address of an item by its index.
-LI1D * List_1D_Seek(struct List_1D * list,unsigned int index)
+L1DI_p List1D_Seek(List1D_p list,unsigned int index)
 {
-	if (list==0) return 0;
-	LI1D * ptr;
-	for (ptr=list->FirstItem;ptr!=0;ptr=ptr->next)
-		if (ptr->index==index)
+	if (!list) return 0;
+	for (L1DI_p ptr=list->First;ptr;ptr=ptr->next)
+		if (ptr->Index==index)
 			return ptr;
 	return 0;
 }
 
-//Get data by index.
-double List_1D_GetDat(struct List_1D * list,unsigned int index)
+//Get data by ptr
+void * List1D_GetData_p(L1DI_p item,unsigned char * datasize,char * type_name)
 {
-	if (list==0) return 0;
-	LI1D * pos;
-	for (pos=list->FirstItem;pos!=0;pos=pos->next)
-		if (pos->index==index)
-			return pos->dat;
-	return 0;
+	if (!(item&&datasize)) return 0;
+	* datasize=item->DataSize;
+	if (type_name) strcpy(type_name,item->TypeName);
+	return item->Data;
+}
+
+//Get data by index.
+void * List1D_GetData_i(List1D_p list,unsigned int index,unsigned char * datasize,char * type_name)
+{
+	if (!(list&&datasize)) return 0;
+	return List1D_GetData_p(List1D_Seek(list,index),datasize,type_name);
 }
 
 
+//to be continued
 
+
+/*
+Stack
+A kind of First-In-Last Out data structure.
+*/
 
 //Functions of Stack
 
-//Initializing a stack(double type).Use once at first.
-void Stk_Init(struct Stack * stk)
+/*
+Create a new stack like this : Stack_t <name> = { 0 , 0 }
+or Stack_p <name> = ( Stack_p ) malloc( Stksize ) ; Stk_Init(name)
+You can use the macro definition Stk_New or Stk_New_p(name) .
+*/
+
+//Initializing a stack(double type).Use once at first.Return 1 if succeed.
+char Stk_Init(Stack_p stk)
 {
-	if (stk==0) return;
+	if (!stk) return 0;
 	stk->Top=0;
 	stk->Length=0;
-	return;
+	return 1;
 }
 
 //Add an item to the stack.Return 1 if succeed.
-unsigned char Stk_Push(struct Stack * stk,double dat)
+char Stk_Push(Stack_p stk,void * data,unsigned char datasize,char * type_name)
 {
-	if (stk==0) return 0;
-	SItem * nitem=malloc(SIsize);
-	if (nitem==0) return 0;
-	nitem->dat=dat;
+	if (!(stk&&data&&datasize)) return 0;
+	SI_p nitem=(SI_p)malloc(SIsize);
+	if (!nitem) return 0;
+	nitem->Data=data;
+	nitem->DataSize=datasize;
+	nitem->TypeName=(char *)malloc(strlen(type_name)+1);
+	if (nitem->TypeName) strcpy(nitem->TypeName,type_name);
 	nitem->next=stk->Top;
 	stk->Top=nitem;
 	stk->Length++;
@@ -163,46 +191,94 @@ unsigned char Stk_Push(struct Stack * stk,double dat)
 }
 
 //Peek the top of the stack,but do not remove.
-double Stk_Peek(struct Stack * stk)
+void * Stk_PeekData(Stack_p stk)
 {
-	if (stk==0||stk->Top==0) return 0;
-	return stk->Top->dat;
+	if (!stk) return 0;
+	if (!stk->Top) return 0;
+	return stk->Top->Data;
+}
+
+unsigned char Stk_PeekSize(Stack_p stk)
+{
+	if (!stk) return 0;
+	if (!stk->Top) return 0;
+	return stk->Top->DataSize;
+}
+
+char * Stk_PeekTypeName(Stack_p stk)
+{
+	if (!stk) return 0;
+	if (!stk->Top) return 0;
+	return stk->Top->TypeName;
 }
 
 //Remove an item from the stack and return.
-double Stk_Pop(struct Stack * stk)
+void * Stk_Pop(Stack_p stk,unsigned char * datasize,char * type_name)
 {
-	if (stk==0||stk->Top==0) return 0;
-	SItem * ptr=stk->Top;//record the item on the top
-	double dat=stk->Top->dat;
-	stk->Top=stk->Top->next;//move to the next item
+	if (!(stk&&datasize)) return 0;
+	if (!stk->Top) return 0;
+	//record the item on the top
+	SI_p ptr=stk->Top;
+	void * data=stk->Top->Data;
+	* datasize=stk->Top->DataSize;
+	if (type_name) strcpy(type_name,stk->Top->TypeName);
+	//move to the next item and delete
+	stk->Top=stk->Top->next;
+	free(ptr->TypeName);
 	free(ptr);
 	stk->Length--;
-	return dat;
+	return data;
 }
 
+//Clear the stack.
+char Stk_Clr(Stack_p stk)
+{
+	if (!stk) return 0;
+	SI_p ptr=0;
+	while (stk->Top)
+	{
+		ptr=stk->Top;
+		stk->Top=stk->Top->next;
+		free(ptr->TypeName);
+		free(ptr);
+	}
+	stk->Length=0;
+	return 1;
+}
+
+
+//to be continued
 
 
 //Functions of Queue
 
-//Initializing a queue(double type).Use once at first.
-void Que_Init(struct Queue * que)
+/*
+Create a new queue like this : Queue_t <name> = { 0 , 0 , 0 }
+or Queue_p <name> = ( Queue_p ) malloc( Quesize )
+You can use the macro definition Que_New or Que_New_p(name) .
+*/
+
+//Initializing a queue.Use once at first.Return 1 if succeed.
+char Que_Init(Queue_p que)
 {
-	if (que==0) return;
+	if (!que) return 0;
 	que->Head=que->Tail=0;
 	que->Length=0;
-	return;
+	return 1;
 }
 
 //Add an item to the queue.Return 1 if succeed.
-unsigned char Que_Push(struct Queue * que,double dat)
+char Que_Push(Queue_p que,void * data,unsigned char datasize,char * type_name)
 {
-	if (que==0) return 0;
-	QItem * nitem=malloc(QIsize);
-	if (nitem==0) return 0;
-	nitem->dat=dat;
+	if (!(que&&data&&datasize)) return 0;
+	QI_p nitem=(QI_p)malloc(QIsize);
+	if (!nitem) return 0;
+	nitem->Data=data;
+	nitem->DataSize=datasize;
+	nitem->TypeName=(char *)malloc(strlen(type_name));
+	if (nitem->TypeName) strcpy(nitem->TypeName,type_name);
 	nitem->next=0;
-	if (que->Tail!=0)//not empty
+	if (que->Tail)//not empty
 	{
 		que->Tail->next=nitem;
 		que->Tail=nitem;
@@ -214,31 +290,89 @@ unsigned char Que_Push(struct Queue * que,double dat)
 }
 
 //Peek the head of the queue,but do not remove.
-double Que_PeekHead(struct Queue * que)
+void * Que_PeekHeadData(Queue_p que)
 {
-	if (que==0||que->Head==0) return 0;
-	return que->Head->dat;
+	if (!que) return 0;
+	if (!que->Head) return 0;
+	return que->Head->Data;
+}
+
+unsigned char Que_PeekHeadSize(Queue_p que)
+{
+	if (!que) return 0;
+	if (!que->Head) return 0;
+	return que->Head->DataSize;
+}
+
+char * Que_PeekHeadTypeName(Queue_p que)
+{
+	if (!que) return 0;
+	if (!que->Head) return 0;
+	return que->Head->TypeName;
 }
 
 //Peek the tail of the queue,but do not remove.
-double Que_PeekTail(struct Queue * que)
+void * Que_PeekTailData(Queue_p que)
 {
-	if (que==0||que->Tail==0) return 0;
-	return que->Tail->dat;
+	if (!que) return 0;
+	if (!que->Tail) return 0;
+	return que->Tail->Data;
+}
+
+unsigned char Que_PeekTailSize(Queue_p que)
+{
+	if (!que) return 0;
+	if (!que->Tail) return 0;
+	return que->Tail->DataSize;
+}
+
+char * Que_PeekTailTypeName(Queue_p que)
+{
+	if (!que) return 0;
+	if (!que->Tail) return 0;
+	return que->Tail->TypeName;
 }
 
 //Remove an item from the queue and return.
-double Que_Pop(struct Queue * que)
+void * Que_Pop(Queue_p que,unsigned char * datasize,char * type_name)
 {
-	if (que==0||que->Head==0) return 0;
-	QItem * ptr=que->Head;//record the head item
-	double dat=que->Head->dat;
-	que->Head=que->Head->next;//move to next item
+	if (!(que&&datasize)) return 0;
+	if (!que->Head) return 0;
+	//record the head item
+	QI_p ptr=que->Head;
+	void * data=que->Head->Data;
+	* datasize=que->Head->DataSize;
+	if (type_name) strcpy(type_name,que->Head->TypeName);
+	//move to next item and delete
+	que->Head=que->Head->next;
+	free(ptr->TypeName);
 	free(ptr);
 	que->Length--;
-	return dat;
+	return data;
+}
+
+//Clear the queue.
+char Que_Clr(Queue_p que)
+{
+	if (!que) return 0;
+	QI_p ptr=0;
+	while (que->Head)
+	{
+		ptr=que->Head;
+		que->Head=que->Head->next;
+		free(ptr->TypeName);
+		free(ptr);
+	}
+	que->Tail=0;
+	que->Length=0;
+	return 1;
 }
 
 
+//to be continued
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 //Thanks for reading.Love you.[bi xin]
