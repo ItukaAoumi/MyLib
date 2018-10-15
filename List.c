@@ -1,5 +1,5 @@
 /*
-This is a library of list type data structures,including single-dimension list,double-dimension list,stack and queue.
+This is a library of liner data structures,including single-dimension list,double-dimension list,stack and queue.
 Have Fun _( :<L )_ !
 CN:Ituka Aoumi,Qiyi Ji,Dragon_t;
 Group:Code A Live;
@@ -34,34 +34,39 @@ You can use the macro definition List1D_New or List1D_New_p(name) .
 char List1D_Init(List1D_p list)
 {
 	if (!list) return 0;
-	list->First=0;
-	list->Length=0;
+	list->FirstItem=0;
+	list->Length=list->MaxIndex=0;
 	return 1;
 }
 
-//Add an item to the head.Return 1 if succeed.
-char List1D_Add(List1D_p list,unsigned int index,void * data,unsigned char datasize,char * type_name)
+//Seeking the address of an item by its index.
+L1DI_p List1D_Seek(List1D_p list,unsigned int index)
 {
-	if (!(list&&data&&datasize)) return 0;
-	L1DI_p item=List1D_Seek(list,index);
-	if (item)//item exist
-		if (List1D_Edit(item,data,datasize,type_name))
-			return 1;
-		else
-			return 0;
+	if (!list) return 0;
+	for (L1DI_p ptr=list->FirstItem;ptr;ptr=ptr->NextItem)
+		if (ptr->Index==index) return ptr;
+	return 0;
+}
+
+//Add an item to the head.Return 1 if succeed.
+L1DI_p List1D_Add(List1D_p list,unsigned int index)
+{
+	if (!list) return 0;
+	L1DI_p nitem=List1D_Seek(list,index);
+	if (nitem)//item exist
+		return nitem;
 	else//index not exist
 	{
-		item=(L1DI_p)malloc(L1DIsize);
-		if (!item) return 0;
-		item->Index=index;
-		item->Data=data;
-		item->DataSize=datasize;
-		item->TypeName=(char *)malloc(strlen(type_name)+1);
-		if (item->TypeName) strcpy(item->TypeName,type_name);
-		item->next=list->First;
-		list->First=item;
+		nitem=(L1DI_p)malloc(L1DIsize);
+		if (!nitem) return 0;
+		nitem->Index=index;
+		nitem->Data=0;
+		nitem->DataSize=0;
+		nitem->TypeName=0;
+		nitem->NextItem=list->FirstItem;
+		list->FirstItem=nitem;
 		list->Length++;
-		return 1;
+		return nitem;
 	}
 }
 
@@ -71,39 +76,41 @@ char List1D_Edit(L1DI_p item,void * data,unsigned char datasize,char * type_name
 	if (!(item&&data&&datasize)) return 0;
 	item->Data=data;
 	item->DataSize=datasize;
-	if (* type_name) strcpy(item->TypeName,type_name);
+	free(item->TypeName);
+	if (type_name)//type name exists
+	{
+		item->TypeName=(char *)malloc(strlen(type_name)+1);
+		if (item->TypeName) strcpy(item->TypeName,type_name);
+		else return 0;
+	}
+	else
+		item->TypeName=0;
 	return 1;
 }
 
 //Delete an item.
-char List1D_Del(List1D_p list,L1DI_p item)
+void * List1D_Del(List1D_p list,L1DI_p item)
 {
 	if (!(list&&item)) return 0;
-	if (!list->First) return 0;
-	if (list->First!=item)//is not the first
+	if (!list->FirstItem) return 0;
+	if (list->FirstItem!=item)//is not the first
 	{
 		L1DI_p last;//behind item
-		for (last=list->First;last;last=last->next)//scan the list
-		{
-			if (last->next==item)//find the item
+		for (last=list->FirstItem;last;last=last->NextItem)//scan the list
+			if (last->NextItem==item)//find the item
 			{
-				last->next=item->next;
-				free(item->TypeName);
-				free(item);
-				list->Length--;
-				return 1;
+				last->NextItem=item->NextItem;
+				break;
 			}
-		}
-		return 0;
+		if (!last) return 0;
 	}
 	else//delete the first item
-	{
-		list->First=item->next;
-		free(item->TypeName);
-		free(item);
-		list->Length--;
-		return 1;
-	}
+		list->FirstItem=item->NextItem;
+	void * data=item->Data;
+	free(item->TypeName);
+	free(item);
+	list->Length--;
+	return data;
 }
 
 //Clear the list.Use once at last.
@@ -111,41 +118,45 @@ char List1D_Clr(List1D_p list)
 {
 	if (!list) return 0;
 	L1DI_p ptr;
-	while (list->First)
+	while (list->FirstItem)
 	{
-		ptr=list->First;
-		list->First=list->First->next;
+		ptr=list->FirstItem;
+		list->FirstItem=list->FirstItem->NextItem;
 		free(ptr->TypeName);
 		free(ptr);
 	}
 	list->Length=0;
+	list->MaxIndex=0;
 	return 1;
 }
 
-//Seeking the address of an item by its index.
-L1DI_p List1D_Seek(List1D_p list,unsigned int index)
-{
-	if (!list) return 0;
-	for (L1DI_p ptr=list->First;ptr;ptr=ptr->next)
-		if (ptr->Index==index)
-			return ptr;
-	return 0;
-}
 
 //Get data by ptr
-void * List1D_GetData_p(L1DI_p item,unsigned char * datasize,char * type_name)
+void * List1D_GetData_p(L1DI_p item)
 {
-	if (!(item&&datasize)) return 0;
-	* datasize=item->DataSize;
-	if (type_name) strcpy(type_name,item->TypeName);
+	if (!item) return 0;
 	return item->Data;
 }
 
 //Get data by index.
-void * List1D_GetData_i(List1D_p list,unsigned int index,unsigned char * datasize,char * type_name)
+void * List1D_GetData_i(List1D_p list,unsigned int index)
 {
-	if (!(list&&datasize)) return 0;
-	return List1D_GetData_p(List1D_Seek(list,index),datasize,type_name);
+	if (!list) return 0;
+	return List1D_GetData_p(List1D_Seek(list,index));
+}
+
+//Get data size by ptr.
+unsigned char List1D_GetSize_p(L1DI_p item)
+{
+	if (!item) return 0;
+	return item->DataSize;
+}
+
+//Get type name by ptr.
+char * List1D_GetTypeName_p(L1DI_p item)
+{
+	if (!item) return 0;
+	return item->TypeName;
 }
 
 
@@ -161,7 +172,7 @@ A kind of First-In-Last Out data structure.
 
 /*
 Create a new stack like this : Stack_t <name> = { 0 , 0 }
-or Stack_p <name> = ( Stack_p ) malloc( Stksize ) ; Stk_Init(name)
+or Stack_p <name> = ( Stack_p ) malloc( Stksize ) ; Stk_Init( name )
 You can use the macro definition Stk_New or Stk_New_p(name) .
 */
 
@@ -250,11 +261,16 @@ char Stk_Clr(Stack_p stk)
 //to be continued
 
 
+/*
+Queue
+A kind of First-In-First-Out data structure.
+*/
+
 //Functions of Queue
 
 /*
 Create a new queue like this : Queue_t <name> = { 0 , 0 , 0 }
-or Queue_p <name> = ( Queue_p ) malloc( Quesize )
+or Queue_p <name> = ( Queue_p ) malloc( Quesize ) ; Que_Init( name )
 You can use the macro definition Que_New or Que_New_p(name) .
 */
 
@@ -371,8 +387,200 @@ char Que_Clr(Queue_p que)
 
 //to be continued
 
+
+/*
+Double-Dimension List
+Can be used to store a matrix.
+*/
+
+//Functions of List2D:
+
+/*
+Create a new double-dimension list like this : List2D_t <name> = { 0 , 0 , 0 , 0 }
+or List2D_p <name> = ( List2D_p ) malloc( List2Dsize ) ; List2D_Init( name )
+You can use the macro definition List2D_New or List2D_New_p(name) .
+*/
+
+//Initialize a 2D list.Use once at first.Return 1 if succeed.
+char List2D_Init(List2D_p list)
+{
+	if (!list) return 0;
+	list->FirstRow=0;
+	list->RowLength=list->MaxRow=list->MaxCol=0;
+	return 1;
+}
+
+//Seek a row item
+L2DRI_p List2D_SeekRow(List2D_p list,unsigned int rownum)
+{
+	if (!list) return 0;
+	for (L2DRI_p ptr=list->FirstRow;ptr;ptr=ptr->NextRow)
+		if (ptr->Row==rownum) return ptr;
+	return 0;
+}
+
+//Seek a col item
+L2DCI_p List2D_SeekCol(L2DRI_p rowitem,unsigned int colnum)
+{
+	if (!rowitem) return 0;
+	for (L2DCI_p ptr=rowitem->FirstCol;ptr;ptr=ptr->NextCol)
+		if (ptr->Col==colnum) return ptr;
+	return 0;
+}
+
+//Seek an item by row and col number
+L2DCI_p List2D_SeekItem(List2D_p list,unsigned int rownum,unsigned int colnum)
+{
+	if (!list) return 0;
+	return List2D_SeekCol(List2D_SeekRow(list,rownum),colnum);
+}
+
+//Add a row item and return its ptr.
+L2DRI_p List2D_AddRow(List2D_p list,unsigned int rownum)
+{
+	if (!list) return 0;
+	L2DRI_p nrow=List2D_SeekRow(list,rownum);
+	if (nrow) return nrow;
+	nrow=(L2DRI_p)malloc(L2DRIsize);
+	if (!nrow) return 0;
+	nrow->Row=rownum;
+	nrow->FirstCol=0;
+	nrow->ColLength=0;
+	nrow->NextRow=list->FirstRow;
+	list->FirstRow=nrow;
+	list->RowLength++;
+	return nrow;
+}
+
+//Add a col item and return its ptr.
+L2DCI_p List2D_AddCol(L2DRI_p rowitem,unsigned int colnum)
+{
+	if (!rowitem) return 0;
+	L2DCI_p ncol=List2D_SeekCol(rowitem,colnum);
+	if (ncol) return ncol;
+	ncol=(L2DCI_p)malloc(L2DCIsize);
+	if (!ncol) return 0;
+	ncol->Col=colnum;
+	ncol->Data=0;
+	ncol->DataSize=0;
+	ncol->TypeName=0;
+	ncol->NextCol=rowitem->FirstCol;
+	rowitem->FirstCol=ncol;
+	rowitem->ColLength++;
+	return ncol;
+}
+
+//Edit an item.Return 1 if succeed.
+char List2D_Edit(L2DCI_p item,void * data,unsigned char datasize,char * type_name)
+{
+	if (!(item&&data&&datasize)) return 0;
+	item->Data=data;
+	item->DataSize=datasize;
+	free(item->TypeName);
+	if (type_name)//type name exists
+	{
+		item->TypeName=(char *)malloc(strlen(type_name)+1);
+		if (item->TypeName) strcpy(item->TypeName,type_name);
+		else return 0;
+	}
+	else
+		item->TypeName=0;
+	return 1;
+}
+
+//Delete a row item and all of its col items
+char List2D_DelRow(List2D_p list,L2DRI_p rowitem)
+{
+	if (!(list&&rowitem)) return 0;
+	if (rowitem!=list->FirstRow)//is not the first row
+	{
+		L2DRI_p last;//behind rowitem
+		for (last=list->FirstRow;last;last=last->NextRow)
+			if (last->NextRow==rowitem) break;
+		if (!last) return 0;
+		last->NextRow=rowitem->NextRow;
+	}
+	else//delete the first row
+		list->FirstRow=rowitem->NextRow;
+	List2D_ClrRow(rowitem);
+	free(rowitem);
+	list->RowLength--;
+	return 1;
+}
+
+//Delete a col item
+void * List2D_DelCol(L2DRI_p rowitem,L2DCI_p colitem)
+{
+	if (!(rowitem&&colitem)) return 0;
+	if (colitem!=rowitem->FirstCol)//is not the first col
+	{
+		L2DCI_p last;//behind colitem
+		for (last=rowitem->FirstCol;last;last=last->NextCol)
+			if (last->NextCol==colitem) break;
+		if (!last) return 0;
+		last->NextCol=colitem->NextCol;
+	}
+	else//delete the first col
+		rowitem->FirstCol=colitem->NextCol;
+	void * data=colitem->Data;
+	free(colitem->TypeName);
+	free(colitem);
+	rowitem->ColLength--;
+	return data;
+}
+
+//Clear a row.
+char List2D_ClrRow(L2DRI_p rowitem)
+{
+	if (!rowitem) return 0;
+	L2DCI_p ptr;
+	while (rowitem->FirstCol)
+	{
+		ptr=rowitem->FirstCol;
+		rowitem->FirstCol=rowitem->FirstCol->NextCol;
+		free(ptr->TypeName);
+		free(ptr);
+	}
+	rowitem->ColLength=0;
+	return 1;
+}
+
+//Clear the 2D list.Use once at last.
+char List2D_Clr(List2D_p list)
+{
+	if (!list) return 0;
+	L2DRI_p ptr;
+	while (list->FirstRow)
+	{
+		if (!List2D_ClrRow(list->FirstRow)) return 0;
+		ptr=list->FirstRow;
+		list->FirstRow=list->FirstRow->NextRow;
+		free(ptr);
+	}
+	list->RowLength=0;
+	return 1;
+}
+
+//Get data by ptr
+void * List2D_GetData(L2DCI_p item)
+{
+	if (!item) return 0;
+	return item->Data;
+}
+
+//Get data size by ptr
+unsigned char List2D_GetSize(L2DCI_p item)
+{
+	if (!item) return 0;
+	return item->DataSize;
+}
+
+
+//to be continued
+
+
 #ifdef __cplusplus
-extern "C" {
+}
 #endif // __cplusplus
 
 //Thanks for reading.Love you.[bi xin]
