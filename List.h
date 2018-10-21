@@ -59,17 +59,20 @@ char List1D_Init(List1D_p list);
 //Seeking the address of an item by its index.
 L1DI_p List1D_Seek(List1D_p list,unsigned int index);
 
-//Add an item to the head.Return 1 if succeed.
+//Add an item to the head and return its ptr.
 L1DI_p List1D_Add(List1D_p list,unsigned int index);
 
 //Edit data of an item.Return 1 if succeed.
 char List1D_Edit(L1DI_p item,void * data,unsigned char datasize,char * type_name);
 
 //Delete an item.
-void * List1D_Del(List1D_p list,L1DI_p item);
+char List1D_Del(List1D_p list,L1DI_p item);
 
 //Clear the list.Use once at last.
 char List1D_Clr(List1D_p list);
+
+//Get the max index.
+unsigned int List1D_MaxIndex(List1D_p list);
 
 //Get data by ptr
 void * List1D_GetData_p(L1DI_p item);
@@ -82,7 +85,6 @@ unsigned char List1D_GetSize_p(L1DI_p item);
 
 //Get type name by ptr.
 char * List1D_GetTypeName_p(L1DI_p item);
-
 
 
 //to be continued
@@ -281,7 +283,7 @@ char List2D_Edit(L2DCI_p item,void * data,unsigned char datasize,char * type_nam
 char List2D_DelRow(List2D_p list,L2DRI_p rowitem);
 
 //Delete a col item.
-void * List2D_DelCol(L2DRI_p rowitem,L2DCI_p colitem);
+char List2D_DelCol(L2DRI_p rowitem,L2DCI_p colitem);
 
 //Clear a row.
 char List2D_ClrRow(L2DRI_p rowitem);
@@ -290,10 +292,16 @@ char List2D_ClrRow(L2DRI_p rowitem);
 char List2D_Clr(List2D_p list);
 
 //Get data by ptr
-void * List2D_GetData(L2DCI_p item);
+void * List2D_GetData_p(L2DCI_p item);
+
+//Get data by row and col number.
+void * List2D_GetData_i(List2D_p list,unsigned int rownum,unsigned int colnum);
 
 //Get data size by ptr
-unsigned char List2D_GetSize(L2DCI_p item);
+unsigned char List2D_GetSize_p(L2DCI_p item);
+
+//Get type name by ptr
+char * List2D_GetTypeName_p(L2DCI_p item);
 
 
 //to be continued

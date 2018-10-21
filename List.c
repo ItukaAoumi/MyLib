@@ -48,34 +48,39 @@ L1DI_p List1D_Seek(List1D_p list,unsigned int index)
 	return 0;
 }
 
-//Add an item to the head.Return 1 if succeed.
+//Add an item to the head and return its ptr.
 L1DI_p List1D_Add(List1D_p list,unsigned int index)
 {
 	if (!list) return 0;
+	//check if the item exists
 	L1DI_p nitem=List1D_Seek(list,index);
-	if (nitem)//item exist
-		return nitem;
-	else//index not exist
-	{
-		nitem=(L1DI_p)malloc(L1DIsize);
-		if (!nitem) return 0;
-		nitem->Index=index;
-		nitem->Data=0;
-		nitem->DataSize=0;
-		nitem->TypeName=0;
-		nitem->NextItem=list->FirstItem;
-		list->FirstItem=nitem;
-		list->Length++;
-		return nitem;
-	}
+	if (nitem) return nitem;
+	//create a new item
+	nitem=(L1DI_p)malloc(L1DIsize);
+	if (!nitem) return 0;
+	//initializing
+	nitem->Index=index;
+	nitem->Data=0;
+	nitem->DataSize=0;
+	nitem->TypeName=0;
+	nitem->NextItem=list->FirstItem;
+	list->FirstItem=nitem;
+	list->Length++;
+	return nitem;
 }
 
 //Edit data of an item.Return 1 if succeed.
 char List1D_Edit(L1DI_p item,void * data,unsigned char datasize,char * type_name)
 {
 	if (!(item&&data&&datasize)) return 0;
-	item->Data=data;
+	//clear and copy data
+	free(item->Data);
+	item->Data=malloc(datasize);
+	if (item->Data) memcpy(item->Data,data,datasize);
+	else return 0;
+	//copy size
 	item->DataSize=datasize;
+	//clear and copy type name
 	free(item->TypeName);
 	if (type_name)//type name exists
 	{
@@ -89,7 +94,7 @@ char List1D_Edit(L1DI_p item,void * data,unsigned char datasize,char * type_name
 }
 
 //Delete an item.
-void * List1D_Del(List1D_p list,L1DI_p item)
+char List1D_Del(List1D_p list,L1DI_p item)
 {
 	if (!(list&&item)) return 0;
 	if (!list->FirstItem) return 0;
@@ -106,11 +111,11 @@ void * List1D_Del(List1D_p list,L1DI_p item)
 	}
 	else//delete the first item
 		list->FirstItem=item->NextItem;
-	void * data=item->Data;
+	free(item->Data);
 	free(item->TypeName);
 	free(item);
 	list->Length--;
-	return data;
+	return 1;
 }
 
 //Clear the list.Use once at last.
@@ -122,6 +127,7 @@ char List1D_Clr(List1D_p list)
 	{
 		ptr=list->FirstItem;
 		list->FirstItem=list->FirstItem->NextItem;
+		free(ptr->Data);
 		free(ptr->TypeName);
 		free(ptr);
 	}
@@ -130,6 +136,17 @@ char List1D_Clr(List1D_p list)
 	return 1;
 }
 
+//Get the max index.
+unsigned int List1D_MaxIndex(List1D_p list)
+{
+	if (!list) return 0;
+	L1DI_p ptr;unsigned int maxi;
+	for (ptr=list->FirstItem,maxi=0;ptr;ptr=ptr->NextItem)
+		if (ptr->Index>maxi)
+			maxi=ptr->Index;
+	list->MaxIndex=maxi;
+	return maxi;
+}
 
 //Get data by ptr
 void * List1D_GetData_p(L1DI_p item)
@@ -189,12 +206,23 @@ char Stk_Init(Stack_p stk)
 char Stk_Push(Stack_p stk,void * data,unsigned char datasize,char * type_name)
 {
 	if (!(stk&&data&&datasize)) return 0;
+	//create a new item
 	SI_p nitem=(SI_p)malloc(SIsize);
 	if (!nitem) return 0;
-	nitem->Data=data;
+	//create a new data area
+	nitem->Data=malloc(datasize);
+	if (!nitem->Data) return 0;
+	//copy data and size
+	memcpy(nitem->Data,data,datasize);
 	nitem->DataSize=datasize;
-	nitem->TypeName=(char *)malloc(strlen(type_name)+1);
-	if (nitem->TypeName) strcpy(nitem->TypeName,type_name);
+	//create type name
+	if (type_name)//type name exists
+	{
+		nitem->TypeName=(char *)malloc(strlen(type_name)+1);
+		if (nitem->TypeName) strcpy(nitem->TypeName,type_name);
+	}
+	else//not exist
+		nitem->TypeName=0;
 	nitem->next=stk->Top;
 	stk->Top=nitem;
 	stk->Length++;
@@ -228,13 +256,17 @@ void * Stk_Pop(Stack_p stk,unsigned char * datasize,char * type_name)
 {
 	if (!(stk&&datasize)) return 0;
 	if (!stk->Top) return 0;
-	//record the item on the top
-	SI_p ptr=stk->Top;
-	void * data=stk->Top->Data;
+	//create a new data area to return
+	void * data=malloc(stk->Top->DataSize);
+	if (!data) return 0;
+	//copy data,size and type name
+	memcpy(data,stk->Top->Data,stk->Top->DataSize);
 	* datasize=stk->Top->DataSize;
 	if (type_name) strcpy(type_name,stk->Top->TypeName);
 	//move to the next item and delete
+	SI_p ptr=stk->Top;
 	stk->Top=stk->Top->next;
+	free(ptr->Data);
 	free(ptr->TypeName);
 	free(ptr);
 	stk->Length--;
@@ -250,6 +282,7 @@ char Stk_Clr(Stack_p stk)
 	{
 		ptr=stk->Top;
 		stk->Top=stk->Top->next;
+		free(ptr->Data);
 		free(ptr->TypeName);
 		free(ptr);
 	}
@@ -287,12 +320,23 @@ char Que_Init(Queue_p que)
 char Que_Push(Queue_p que,void * data,unsigned char datasize,char * type_name)
 {
 	if (!(que&&data&&datasize)) return 0;
+	//create a new item
 	QI_p nitem=(QI_p)malloc(QIsize);
 	if (!nitem) return 0;
-	nitem->Data=data;
+	//create a new data area
+	nitem->Data=malloc(datasize);
+	if (!nitem->Data) return 0;
+	//copy data and size
+	memcpy(nitem->Data,data,datasize);
 	nitem->DataSize=datasize;
-	nitem->TypeName=(char *)malloc(strlen(type_name));
-	if (nitem->TypeName) strcpy(nitem->TypeName,type_name);
+	//create type name
+	if (type_name)//type name exists
+	{
+		nitem->TypeName=(char *)malloc(strlen(type_name)+1);
+		if (nitem->TypeName) strcpy(nitem->TypeName,type_name);
+	}
+	else//not exist
+		nitem->TypeName=0;
 	nitem->next=0;
 	if (que->Tail)//not empty
 	{
@@ -354,13 +398,18 @@ void * Que_Pop(Queue_p que,unsigned char * datasize,char * type_name)
 {
 	if (!(que&&datasize)) return 0;
 	if (!que->Head) return 0;
-	//record the head item
-	QI_p ptr=que->Head;
-	void * data=que->Head->Data;
+	//create a new data area to return
+	void * data=malloc(que->Head->DataSize);
+	if (!data) return 0;
+	//copy data,size and type name
+	memcpy(data,que->Head->Data,que->Head->DataSize);
 	* datasize=que->Head->DataSize;
 	if (type_name) strcpy(type_name,que->Head->TypeName);
 	//move to next item and delete
+	QI_p ptr=que->Head;
 	que->Head=que->Head->next;
+	if (!que->Head) que->Tail=0;
+	free(ptr->Data);
 	free(ptr->TypeName);
 	free(ptr);
 	que->Length--;
@@ -371,11 +420,12 @@ void * Que_Pop(Queue_p que,unsigned char * datasize,char * type_name)
 char Que_Clr(Queue_p que)
 {
 	if (!que) return 0;
-	QI_p ptr=0;
+	QI_p ptr;
 	while (que->Head)
 	{
 		ptr=que->Head;
 		que->Head=que->Head->next;
+		free(ptr->Data);
 		free(ptr->TypeName);
 		free(ptr);
 	}
@@ -439,10 +489,13 @@ L2DCI_p List2D_SeekItem(List2D_p list,unsigned int rownum,unsigned int colnum)
 L2DRI_p List2D_AddRow(List2D_p list,unsigned int rownum)
 {
 	if (!list) return 0;
+	//check if the item exists
 	L2DRI_p nrow=List2D_SeekRow(list,rownum);
 	if (nrow) return nrow;
+	//create a new item
 	nrow=(L2DRI_p)malloc(L2DRIsize);
 	if (!nrow) return 0;
+	//initializing
 	nrow->Row=rownum;
 	nrow->FirstCol=0;
 	nrow->ColLength=0;
@@ -456,10 +509,13 @@ L2DRI_p List2D_AddRow(List2D_p list,unsigned int rownum)
 L2DCI_p List2D_AddCol(L2DRI_p rowitem,unsigned int colnum)
 {
 	if (!rowitem) return 0;
+	//check if the item exists
 	L2DCI_p ncol=List2D_SeekCol(rowitem,colnum);
 	if (ncol) return ncol;
+	//create a new item
 	ncol=(L2DCI_p)malloc(L2DCIsize);
 	if (!ncol) return 0;
+	//initializing
 	ncol->Col=colnum;
 	ncol->Data=0;
 	ncol->DataSize=0;
@@ -474,8 +530,14 @@ L2DCI_p List2D_AddCol(L2DRI_p rowitem,unsigned int colnum)
 char List2D_Edit(L2DCI_p item,void * data,unsigned char datasize,char * type_name)
 {
 	if (!(item&&data&&datasize)) return 0;
-	item->Data=data;
+	//clear and copy data
+	free(item->Data);
+	item->Data=malloc(datasize);
+	if (item->Data) memcpy(item->Data,data,datasize);
+	else return 0;
+	//copy size
 	item->DataSize=datasize;
+	//clear and copy type name
 	free(item->TypeName);
 	if (type_name)//type name exists
 	{
@@ -509,7 +571,7 @@ char List2D_DelRow(List2D_p list,L2DRI_p rowitem)
 }
 
 //Delete a col item
-void * List2D_DelCol(L2DRI_p rowitem,L2DCI_p colitem)
+char List2D_DelCol(L2DRI_p rowitem,L2DCI_p colitem)
 {
 	if (!(rowitem&&colitem)) return 0;
 	if (colitem!=rowitem->FirstCol)//is not the first col
@@ -522,11 +584,11 @@ void * List2D_DelCol(L2DRI_p rowitem,L2DCI_p colitem)
 	}
 	else//delete the first col
 		rowitem->FirstCol=colitem->NextCol;
-	void * data=colitem->Data;
+	free(colitem->Data);
 	free(colitem->TypeName);
 	free(colitem);
 	rowitem->ColLength--;
-	return data;
+	return 1;
 }
 
 //Clear a row.
@@ -538,6 +600,7 @@ char List2D_ClrRow(L2DRI_p rowitem)
 	{
 		ptr=rowitem->FirstCol;
 		rowitem->FirstCol=rowitem->FirstCol->NextCol;
+		free(ptr->Data);
 		free(ptr->TypeName);
 		free(ptr);
 	}
@@ -562,17 +625,31 @@ char List2D_Clr(List2D_p list)
 }
 
 //Get data by ptr
-void * List2D_GetData(L2DCI_p item)
+void * List2D_GetData_p(L2DCI_p item)
 {
 	if (!item) return 0;
 	return item->Data;
 }
 
+//Get data by row and col number.
+void * List2D_GetData_i(List2D_p list,unsigned int rownum,unsigned int colnum)
+{
+	if (!list) return 0;
+	return List2D_GetData_p(List2D_SeekItem(list,rownum,colnum));
+}
+
 //Get data size by ptr
-unsigned char List2D_GetSize(L2DCI_p item)
+unsigned char List2D_GetSize_p(L2DCI_p item)
 {
 	if (!item) return 0;
 	return item->DataSize;
+}
+
+//Get type name by ptr
+char * List2D_GetTypeName_p(L2DCI_p item)
+{
+	if (!item) return 0;
+	return item->TypeName;
 }
 
 
