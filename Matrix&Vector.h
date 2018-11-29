@@ -1,13 +1,16 @@
 //Do not include me twice or more!
 #pragma once
-#ifndef MATRIX_H_INCLUDED
-#define MATRIX_H_INCLUDED
+#ifndef MATRIXVECTOR_H_INCLUDED
+#define MATRIXVECTOR_H_INCLUDED
 
 //Can be used in cpp.
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
+
+#ifndef UMIVECTOR
+#define UMIVECTOR
 
 /*
 Vector Data Type
@@ -16,14 +19,8 @@ X(x[0], x[1], ... , x[n-1]),x[i] is data and n is the dimension.
 */
 
 //data structure
-typedef struct umiVector
-{
-	double * Val;//the pointer of data
-	unsigned int Dims;//dimensions
-}umiVec_t, * umiVec_p;
-
-//the size of a vector
-const static unsigned char umiVecsize = sizeof(struct umiVector);
+typedef struct umiVector umiVec_t;
+typedef struct umiVector * umiVec_p;
 
 /*
 Create a new vector:
@@ -129,7 +126,11 @@ double umiVec_Len(umiVec_p vec);
 
 
 //to be continued
+#endif // UMIVECTOR
 
+
+#ifndef UMIMATRIX
+#define UMIMATRIX
 
 /*
 Matrix Data Type
@@ -139,15 +140,8 @@ QwQ ying ying ying
 */
 
 //data structure
-typedef struct umiMatrix
-{
-	double * * Val;
-	unsigned int Rows;
-	unsigned int Cols;
-}umiMat_t, * umiMat_p;
-
-//The size of a matrix.
-const static unsigned char umiMatsize = sizeof(struct umiMatrix);
+typedef struct umiMatrix umiMat_t;
+typedef struct umiMatrix * umiMat_p;
 
 /*
 Create a new matrix:
@@ -168,6 +162,14 @@ Return the pointer.
 umiMat_p umiMat_New(unsigned int rows, unsigned int cols);
 
 /*
+Create a new identity matrix.The rows and columns are the same.
+params:
+rows: rows and columns of the new matrix
+val: value of the identity matrix
+*/
+umiMat_p umiMat_NewIdMat(unsigned int rows, double val);
+
+/*
 Reset the rows and cols of a matrix.
 params:
 mat: matrix
@@ -175,7 +177,11 @@ rows: new rows
 cols: new columns
 Return 1 if succeed.
 */
-char umiMat_ResetRC(umiMat_p mat, unsigned int rows, unsigned int cols);
+char umiMat_Reset(umiMat_p mat, unsigned int rows, unsigned int cols);
+
+//Return the rows or columns of a matrix.
+unsigned int umiMat_Rows(umiMat_p mat);
+unsigned int umiMat_Cols(umiMat_p mat);
 
 /*
 Set a value of a matrix.
@@ -212,6 +218,24 @@ char umiMat_GetRow(umiMat_p mat, unsigned int row, double * dest);
 
 //Get a column. Copy to an array.
 char umiMat_GetCol(umiMat_p mat, unsigned int col, double * dest);
+
+//Swap two rows.
+char umiMat_SwapRow(umiMat_p mat, const unsigned int row1, const unsigned int row2);
+
+//Swap two columns.
+char umiMat_SwapCol(umiMat_p mat, const unsigned int col1, const unsigned int col2);
+
+/*
+Sort the matrix by a key row.
+order: 0 for ascending, 1 for descending
+*/
+char umiMat_SortByRow(umiMat_p mat, const unsigned int keyrow, const unsigned char order);
+
+/*
+Sort the matrix by a key column.
+order: 0 for ascending, 1 for descending
+*/
+char umiMat_SortByCol(umiMat_p mat, const unsigned int keycol, const unsigned char order);
 
 //Clear data, rows and cols of a matrix.
 char umiMat_Clr(umiMat_p mat);
@@ -261,14 +285,17 @@ char umiMat_TransSelf(umiMat_p * mat);
 //Transpose a matrix to a new one.
 umiMat_p umiMat_Trans(umiMat_p mat);
 
+void umiMat_Print(umiMat_p mat);
+
 
 //to be continued
+#endif // UMIMATRIX
 
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // MATRIX_H_INCLUDED
+#endif // MATRIX&VECTOR_H_INCLUDED
 
 //Thanks for reading.[bi xin xin]

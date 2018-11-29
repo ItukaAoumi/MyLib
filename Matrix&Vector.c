@@ -9,23 +9,22 @@
 extern "C" {
 #endif // __cplusplus
 
-int main()//for testing
-{
-	umiMat_p mymat = umiMat_New(3,5);
-	umiMat_SetVal(mymat, 0, 0, 3.33);
-	umiMat_SetVal(mymat, 1, 1, 5);
-	printf("%lf , %lf\n",umiMat_GetVal(mymat, 0, 0), umiMat_GetVal(mymat, 1, 1));
-	umiMat_Del(&mymat);
-	printf("%u\n",mymat);
-	return 0;
-}
-
 
 /*
 Vector Data Type
 This can be used to store a sequence of data.
 X(x[0], x[1], ... , x[n-1]),x[i] is data and n is the dimension.
 */
+
+//definition of data structure
+struct umiVector
+{
+	double * Val;//the pointer of data
+	unsigned int Dims;//dimensions
+};
+
+//the size of a vector
+const static unsigned char umiVecsize = sizeof(struct umiVector);
 
 /*
 Create a new vector:
@@ -294,7 +293,21 @@ double umiVec_Len(umiVec_p vec)
 
 /*
 Matrix Data Type
+There are a lot of BUGS
+must be made by Ji Qi Yi
+QwQ ying ying ying
 */
+
+//definition of data structure
+struct umiMatrix
+{
+	double * * Val;
+	unsigned int Rows;
+	unsigned int Cols;
+};
+
+//The size of a matrix.
+const static unsigned char umiMatsize = sizeof(struct umiMatrix);
 
 /*
 Create a new matrix:
@@ -333,6 +346,20 @@ umiMat_p umiMat_New(unsigned int rows, unsigned int cols)
 }
 
 /*
+Create a new identity matrix.The rows and columns are the same.
+params:
+rows: rows and columns of the new matrix
+val: value of the identity matrix
+*/
+umiMat_p umiMat_NewIdMat(unsigned int rows, double val)
+{
+	if (!rows) return 0;
+	umiMat_p nmat = umiMat_New(rows, rows);
+	for (unsigned int i = 0; i < rows; i++) *(*(nmat->Val + i) + i) = val;
+	return nmat;
+}
+
+/*
 Reset the rows and cols of a matrix.
 params:
 mat: matrix
@@ -340,7 +367,7 @@ rows: new rows
 cols: new columns
 Return 1 if succeed.
 */
-char umiMat_ResetRC(umiMat_p mat, unsigned int rows, unsigned int cols)
+char umiMat_Reset(umiMat_p mat, unsigned int rows, unsigned int cols)
 {
 	if (!(mat && rows && cols)) return 0;
 	if (!mat->Val) return 0;
@@ -368,6 +395,18 @@ char umiMat_ResetRC(umiMat_p mat, unsigned int rows, unsigned int cols)
 #define CheckMat if (!mat) return 0; if (!(mat->Val && mat->Rows && mat->Cols)) return 0;
 #define CheckR if (row >= mat->Rows) return 0;
 #define CheckC if (col >= mat->Cols) return 0;
+
+//Return the rows or columns of a matrix.
+unsigned int umiMat_Rows(umiMat_p mat)
+{
+	CheckMat
+	return mat->Rows;
+}
+unsigned int umiMat_Cols(umiMat_p mat)
+{
+	CheckMat
+	return mat->Cols;
+}
 
 /*
 Set a value of a matrix.
@@ -445,6 +484,70 @@ char umiMat_GetCol(umiMat_p mat, unsigned int col, double * dest)
 	return 1;
 }
 
+char umiMat_SwapRow(umiMat_p mat, const unsigned int row1, const unsigned int row2)
+{
+	CheckMat
+	if (row1 >= mat->Rows || row2 >= mat->Rows || row1 == row2) return 0;
+	double temp = 0;
+	for (unsigned int c = 0; c < mat->Cols; c++)
+	{
+		temp = mat->Val[row1][c];
+		mat->Val[row1][c] = mat->Val[row2][c];
+		mat->Val[row2][c] = temp;
+	}
+	return 1;
+}
+
+char umiMat_SwapCol(umiMat_p mat, const unsigned int col1, const unsigned int col2)
+{
+	CheckMat
+	if (col1 >= mat->Cols || col2 >= mat->Cols || col1 == col2) return 0;
+	double temp = 0;
+	for (unsigned int r = 0; r < mat->Rows; r++)
+	{
+		temp = mat->Val[r][col1];
+		mat->Val[r][col1] = mat->Val[r][col2];
+		mat->Val[r][col2] = temp;
+	}
+	return 1;
+}
+
+char umiMat_SortByRow(umiMat_p mat, const unsigned int keyrow, const unsigned char order)
+{
+	CheckMat
+	if (keyrow >= mat->Rows || order >= 2) return 0;
+	unsigned int c, fin, flag;
+	for (fin = 0; fin < mat->Cols - 1; fin++)
+	{
+		for (c = flag = 0; c + 1 < mat->Cols - fin; c++)
+			if ((order && mat->Val[keyrow][c] < mat->Val[keyrow][c + 1]) || (!order && mat->Val[keyrow][c] > mat->Val[keyrow][c + 1]))
+			{
+				umiMat_SwapCol(mat, c, c + 1);
+				flag++;
+			}
+		if (!flag) break;
+	}
+	return 1;
+}
+
+char umiMat_SortByCol(umiMat_p mat, const unsigned int keycol, const unsigned char order)
+{
+	CheckMat
+	if (keycol >= mat->Cols || order >= 2) return 0;
+	unsigned int r, fin, flag;
+	for (fin = 0; fin < mat->Rows - 1; fin++)
+	{
+		for (r = flag = 0; r + 1 < mat->Rows - fin; r++)
+			if ((order && mat->Val[r][keycol] < mat->Val[r + 1][keycol]) || (!order && mat->Val[r][keycol] > mat->Val[r + 1][keycol]))
+			{
+				umiMat_SwapRow(mat, r, r + 1);
+				flag++;
+			}
+		if (!flag) break;
+	}
+	return 1;
+}
+
 //Clear data, rows and cols of a matrix.
 char umiMat_Clr(umiMat_p mat)
 {
@@ -460,6 +563,7 @@ char umiMat_Clr(umiMat_p mat)
 void umiMat_Del(umiMat_p * mat)
 {
 	if (!mat) return;
+	if (!(*mat)) return;
 	umiMat_Clr(*mat);
 	free(*mat);
 	*mat = 0;
@@ -631,6 +735,23 @@ umiMat_p umiMat_Trans(umiMat_p mat)
 		for (unsigned int c = 0; c < mat->Cols; c++)
 			nmat->Val[c][r] = mat->Val[r][c];
 	return nmat;
+}
+
+void umiMat_Print(umiMat_p mat)
+{
+	if (!mat) return;
+	if (!(mat->Val && mat->Rows && mat->Cols)) return;
+	unsigned int r, c;
+	for (r = 0; r < mat->Rows; r++)
+	{
+		for (c = 0; c < mat->Cols; c++)
+		{
+			printf("%lf",mat->Val[r][c]);
+			if (c < mat->Cols - 1) printf("\t");
+		}
+		printf("\n");
+	}
+	return;
 }
 
 
