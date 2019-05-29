@@ -317,26 +317,35 @@ umiMat_p umiMat_NewIdMat(const unsigned int rows, const double val)
 	return nmat;
 }
 
-umiMat_p umiMat_Reset(umiMat_p * mat, const unsigned int rows, const unsigned int cols)
+umiMat_p umiMat_Reset(const umiMat_p mat, const unsigned int rows, const unsigned int cols)
 {
-	//checking input
 	if (!(mat && rows && cols)) return 0;
-	if (!(*mat)) return 0;
-	if (!(*mat)->Val) return 0;
-	if ((*mat)->Rows == rows && (*mat)->Cols == cols) return 0;
+	if (mat->Rows == rows && mat->Cols == cols) return mat;
 	unsigned int r, c;
-	umiMat_p tmp = umiMat_New(rows, cols);	if (!tmp) return 0;	//create a temp.
+	//create a temp
+	double * * tmp = (double * *) calloc(rows, sizeof(double *));	if (!tmp) return 0;
+	for (r = 0; r < rows; r++)
+	{
+		tmp[r] = (double *) calloc(cols, sizeof(double));
+		//allocation failure
+		if (!tmp[r])
+		{
+			for(unsigned int i = 0; i < r; i++) free(tmp[i]);
+			free(tmp);
+			return 0;
+		}
+	}
 	//copy
-	for (r = 0; r < (*mat)->Rows && r < rows; r++)
-		for (c = 0; c < (*mat)->Cols && c < cols; c++)
-			tmp->Val[r][c] = (*mat)->Val[r][c];
+	for (r = 0; r < mat->Rows && r < rows; r++)
+		for (c = 0; c < mat->Cols && c < cols; c++)
+			tmp[r][c] = mat->Val[r][c];
 	//delete old
-	umiMat_Del(mat);
-	*mat = tmp;
-	return *mat;
+	umiMat_Clr(mat);
+	mat->Val = tmp;	mat->Rows = rows;	mat->Cols = cols;
+	return mat;
 }
 
-umiMat_p umiMat_Clr(umiMat_p mat)
+umiMat_p umiMat_Clr(const umiMat_p mat)
 {
 	if (!mat) return 0;
 	if (mat->Val)
@@ -508,7 +517,7 @@ umiMat_p umiMat_AddCol(const umiMat_p mat, const unsigned int col1, const unsign
 	return mat;
 }
 
-umiMat_p umiMat_SortByRow(umiMat_p mat, const unsigned int keyrow, const unsigned char order)
+umiMat_p umiMat_SortByRow(const umiMat_p mat, const unsigned int keyrow, const unsigned char order)
 {
 	CheckMat
 	if (keyrow >= mat->Rows || order >= 2) return 0;
@@ -526,7 +535,7 @@ umiMat_p umiMat_SortByRow(umiMat_p mat, const unsigned int keyrow, const unsigne
 	return mat;
 }
 
-umiMat_p umiMat_SortByCol(umiMat_p mat, const unsigned int keycol, const unsigned char order)
+umiMat_p umiMat_SortByCol(const umiMat_p mat, const unsigned int keycol, const unsigned char order)
 {
 	CheckMat
 	if (keycol >= mat->Cols || order >= 2) return 0;
@@ -544,7 +553,7 @@ umiMat_p umiMat_SortByCol(umiMat_p mat, const unsigned int keycol, const unsigne
 	return mat;
 }
 
-umiMat_p umiMat_InsRow(umiMat_p mat, const unsigned int row)
+umiMat_p umiMat_InsRow(const umiMat_p mat, const unsigned int row)
 {
 	if (!mat) return mat;
 	if (row > mat->Rows) return mat;
@@ -558,7 +567,7 @@ umiMat_p umiMat_InsRow(umiMat_p mat, const unsigned int row)
 	return mat;
 }
 
-umiMat_p umiMat_InsCol(umiMat_p mat, const unsigned int col)
+umiMat_p umiMat_InsCol(const umiMat_p mat, const unsigned int col)
 {
 	if (!mat) return mat;
 	if (col > mat->Cols) return mat;
@@ -581,7 +590,7 @@ umiMat_p umiMat_InsCol(umiMat_p mat, const unsigned int col)
 	return mat;
 }
 
-umiMat_p umiMat_DelRow(umiMat_p mat, const unsigned int row)
+umiMat_p umiMat_DelRow(const umiMat_p mat, const unsigned int row)
 {
 	CheckMat CheckR
 	unsigned int r, c;
@@ -594,7 +603,7 @@ umiMat_p umiMat_DelRow(umiMat_p mat, const unsigned int row)
 	return mat;
 }
 
-umiMat_p umiMat_DelCol(umiMat_p mat, const unsigned int col)
+umiMat_p umiMat_DelCol(const umiMat_p mat, const unsigned int col)
 {
 	CheckMat CheckC
 	unsigned int r, c;
@@ -608,7 +617,7 @@ umiMat_p umiMat_DelCol(umiMat_p mat, const unsigned int col)
 	return mat;
 }
 
-umiMat_p umiMat_Neg(umiMat_p mat, const unsigned char preserve)
+umiMat_p umiMat_Neg(const umiMat_p mat, const unsigned char preserve)
 {
 	CheckMat
 	umiMat_p ans = umiMat_New(mat->Rows, mat->Cols);	if (!ans) return 0;	//create a new matrix
@@ -616,11 +625,11 @@ umiMat_p umiMat_Neg(umiMat_p mat, const unsigned char preserve)
 	for (r = 0; r < mat->Rows; r++)
 		for (c = 0; c < mat->Cols; c++)
 			ans->Val[r][c] = -mat->Val[r][c];
-	if (!preserve) umiMat_Del(&mat);
+	if (!preserve) free(umiMat_Clr(mat));	//delete old
 	return ans;
 }
 
-umiMat_p umiMat_Trans(umiMat_p mat, const unsigned char preserve)
+umiMat_p umiMat_Trans(const umiMat_p mat, const unsigned char preserve)
 {
 	CheckMat
 	umiMat_p ans = umiMat_New(mat->Cols, mat->Rows);	if (!ans) return 0;	//create a new matrix
@@ -628,7 +637,7 @@ umiMat_p umiMat_Trans(umiMat_p mat, const unsigned char preserve)
 	for (unsigned int r = 0; r < mat->Rows; r++)
 		for (unsigned int c = 0; c < mat->Cols; c++)
 			ans->Val[c][r] = mat->Val[r][c];
-	if (!preserve) umiMat_Del(&mat);	//delete old
+	if (!preserve) free(umiMat_Clr(mat));	//delete old
 	return ans;
 }
 
@@ -636,7 +645,7 @@ umiMat_p umiMat_Trans(umiMat_p mat, const unsigned char preserve)
 if (!(matl->Val && matl->Rows && matl->Cols)) return 0;\
 if (!(matr->Val && matr->Rows && matr->Cols)) return 0;
 
-umiMat_p umiMat_Add(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
+umiMat_p umiMat_Add(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve)
 {
 	CheckLRM
 	if (matl->Rows != matr->Rows || matl->Cols != matr->Cols) return 0;
@@ -646,11 +655,11 @@ umiMat_p umiMat_Add(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
 	for (r = 0; r < matl->Rows; r++)
 		for (c = 0; c < matl->Cols; c++)
 			ans->Val[r][c] = matl->Val[r][c] + matr->Val[r][c];
-	if (!preserve) {umiMat_Del(&matl); umiMat_Del(&matr);}	//delete old
+	if (!preserve) {free(umiMat_Clr(matl)); free(umiMat_Clr(matr));}	//delete old
 	return ans;
 }
 
-umiMat_p umiMat_Sub(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
+umiMat_p umiMat_Sub(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve)
 {
 	CheckLRM
 	if (matl->Rows != matr->Rows || matl->Cols != matr->Cols) return 0;
@@ -660,11 +669,11 @@ umiMat_p umiMat_Sub(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
 	for (r = 0; r < matl->Rows; r++)
 		for (c = 0; c < matl->Cols; c++)
 			ans->Val[r][c] = matl->Val[r][c] - matr->Val[r][c];
-	if (!preserve) {umiMat_Del(&matl); umiMat_Del(&matr);}	//delete old
+	if (!preserve) {free(umiMat_Clr(matl)); free(umiMat_Clr(matr));}	//delete old
 	return ans;
 }
 
-umiMat_p umiMat_Mul(umiMat_p mat, const double num, const unsigned char preserve)
+umiMat_p umiMat_Mul(const umiMat_p mat, const double num, const unsigned char preserve)
 {
 	CheckMat
 	umiMat_p ans = umiMat_New(mat->Rows, mat->Cols);	if (!ans) return 0;	//create a new matrix
@@ -673,11 +682,11 @@ umiMat_p umiMat_Mul(umiMat_p mat, const double num, const unsigned char preserve
 	for (r = 0; r < mat->Rows; r++)
 		for (c = 0; c < mat->Cols; c++)
 			ans->Val[r][c] = mat->Val[r][c] * num;
-	if (!preserve) umiMat_Del(&mat);	//delete old
+	if (!preserve) free(umiMat_Clr(mat));	//delete old
 	return ans;
 }
 
-umiMat_p umiMat_CrossProd(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
+umiMat_p umiMat_CrossProd(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve)
 {
 	CheckLRM
 	if (matl->Cols != matr->Rows) return 0;
@@ -688,11 +697,11 @@ umiMat_p umiMat_CrossProd(umiMat_p matl, umiMat_p matr, const unsigned char pres
 		for (c = 0; c < matr->Cols; c++)
 			for (i = 0; i < matl->Cols; i++)
 				ans->Val[r][c] += matl->Val[r][i] * matr->Val[i][c];
-	if (!preserve) {umiMat_Del(&matl); umiMat_Del(&matr);}	//delete old
+	if (!preserve) {free(umiMat_Clr(matl)); free(umiMat_Clr(matr));}	//delete old
 	return ans;
 }
 
-umiMat_p umiMat_DirectProd(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
+umiMat_p umiMat_DirectProd(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve)
 {
 	CheckLRM
 	if (matl->Rows != matr->Rows || matl->Cols != matr->Cols) return 0;
@@ -702,11 +711,11 @@ umiMat_p umiMat_DirectProd(umiMat_p matl, umiMat_p matr, const unsigned char pre
 	for (r = 0; r < matl->Rows; r++)
 		for (c = 0; c < matl->Cols; c++)
 			ans->Val[r][c] = matl->Val[r][c] * matr->Val[r][c];
-	if (!preserve) {umiMat_Del(&matl); umiMat_Del(&matr);}	//delete old
+	if (!preserve) {free(umiMat_Clr(matl)); free(umiMat_Clr(matr));}	//delete old
 	return ans;
 }
 
-umiMat_p umiMat_TensorProd(umiMat_p matl, umiMat_p matr, const unsigned char preserve)
+umiMat_p umiMat_TensorProd(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve)
 {
 	CheckLRM
 	umiMat_p ans = umiMat_New(matl->Rows * matr->Rows, matl->Cols * matr->Cols);	if (!ans) return 0;	//create a new matrix
@@ -717,7 +726,7 @@ umiMat_p umiMat_TensorProd(umiMat_p matl, umiMat_p matr, const unsigned char pre
 			for (rr = 0; rr < matr->Rows; rr++)
 				for (rc = 0; rc < matr->Cols; rc++)
 					ans->Val[lr * matr->Rows + rr][lc * matr->Cols + rc] = matl->Val[lr][lc] * matr->Val[rr][rc];
-	if (!preserve) {umiMat_Del(&matl); umiMat_Del(&matr);}	//delete old
+	if (!preserve) {free(umiMat_Clr(matl)); free(umiMat_Clr(matr));}	//delete old
 	return ans;
 }
 /////START FROM HERE

@@ -185,10 +185,10 @@ rows: new rows
 cols: new columns
 Return the new matrix if succeed.
 */
-umiMat_p umiMat_Reset(umiMat_p * mat, const unsigned int rows, const unsigned int cols);
+umiMat_p umiMat_Reset(const umiMat_p mat, const unsigned int rows, const unsigned int cols);
 
 //Clear data, rows and cols of a matrix.
-umiMat_p umiMat_Clr(umiMat_p mat);
+umiMat_p umiMat_Clr(const umiMat_p mat);
 
 //Delete a matrix. Use once at last.
 char umiMat_Del(umiMat_p * mat);
@@ -278,19 +278,19 @@ umiMat_p umiMat_AddCol(const umiMat_p mat, const unsigned int col1, const unsign
 
 //Sort the matrix by a key row (or column)
 //order: 0 for ascending, 1 for descending
-umiMat_p umiMat_SortByRow(umiMat_p mat, const unsigned int keyrow, const unsigned char order);
-umiMat_p umiMat_SortByCol(umiMat_p mat, const unsigned int keycol, const unsigned char order);
+umiMat_p umiMat_SortByRow(const umiMat_p mat, const unsigned int keyrow, const unsigned char order);
+umiMat_p umiMat_SortByCol(const umiMat_p mat, const unsigned int keycol, const unsigned char order);
 
 //Insert a row (or column).
-umiMat_p umiMat_InsRow(umiMat_p mat, const unsigned int row);
-umiMat_p umiMat_InsCol(umiMat_p mat, const unsigned int col);
+umiMat_p umiMat_InsRow(const umiMat_p mat, const unsigned int row);
+umiMat_p umiMat_InsCol(const umiMat_p mat, const unsigned int col);
 
 //Delete a row (or column).
-umiMat_p umiMat_DelRow(umiMat_p mat, const unsigned int row);
-umiMat_p umiMat_DelCol(umiMat_p mat, const unsigned int col);
+umiMat_p umiMat_DelRow(const umiMat_p mat, const unsigned int row);
+umiMat_p umiMat_DelCol(const umiMat_p mat, const unsigned int col);
 
 //Get the negative of a matrix. a[i][j] = -a[i][j]
-umiMat_p umiMat_Neg(umiMat_p mat, const unsigned char preserve);
+umiMat_p umiMat_Neg(const umiMat_p mat, const unsigned char preserve);
 
 /*
 Transpose a matrix and put at a new one.
@@ -299,7 +299,7 @@ mat: matrix
 preserve: preserve (1) or not (0) the old one
 Return the new matrix.
 */
-umiMat_p umiMat_Trans(umiMat_p mat, const unsigned char preserve);
+umiMat_p umiMat_Trans(const umiMat_p mat, const unsigned char preserve);
 
 /*
 Add two matrix and put at a new one.
@@ -309,22 +309,22 @@ matr: right matrix
 preserve: preserve (1) or not (0) the old one
 Return the new matrix.
 */
-umiMat_p umiMat_Add(umiMat_p matl, umiMat_p matr, const unsigned char preserve);
+umiMat_p umiMat_Add(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve);
 
 //Substrate two matrix and put at a new one.
-umiMat_p umiMat_Sub(umiMat_p matl, umiMat_p matr, const unsigned char preserve);
+umiMat_p umiMat_Sub(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve);
 
 //Multiply a matrix and put at a new one.
-umiMat_p umiMat_Mul(umiMat_p mat, const double num, const unsigned char preserve);
+umiMat_p umiMat_Mul(const umiMat_p mat, const double num, const unsigned char preserve);
 
 //Cross product of two matrix. AB O(r1*c1*c2)
-umiMat_p umiMat_CrossProd(umiMat_p matl, umiMat_p matr, const unsigned char preserve);
+umiMat_p umiMat_CrossProd(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve);
 
 //Direct (Hadamard) product of two matrix. A*B
-umiMat_p umiMat_DirectProd(umiMat_p matl, umiMat_p matr, const unsigned char preserve);
+umiMat_p umiMat_DirectProd(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve);
 
 //Tensor (Kronecker) product of two matrix.
-umiMat_p umiMat_TensorProd(umiMat_p matl, umiMat_p matr, const unsigned char preserve);
+umiMat_p umiMat_TensorProd(const umiMat_p matl, const umiMat_p matr, const unsigned char preserve);
 
 //Row transforming to identity matrix at left. [A]->[E,B]
 umiMat_p umiMat_RowTrans(const umiMat_p mat);
